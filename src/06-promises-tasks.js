@@ -5,7 +5,6 @@
  *                                                                                                *
  ************************************************************************************************ */
 
-
 /**
  * Return Promise object that is resolved with string value === 'Hooray!!! She said "Yes"!',
  * if boolean value === true is passed, resolved with string value === 'Oh no, she said "No".',
@@ -28,10 +27,23 @@
  *      .catch((error) => console.log(error.message)) // 'Error: Wrong parameter is passed!
  *                                                    //  Ask her again.';
  */
-function willYouMarryMe(/* isPositiveAnswer */) {
-  throw new Error('Not implemented');
-}
+function willYouMarryMe(isPositiveAnswer) {
+  return new Promise((resolve) => {
+    if (typeof isPositiveAnswer !== 'boolean') {
+      throw new Error('Wrong parameter is passed! Ask her again.');
+    }
 
+    if (isPositiveAnswer) {
+      resolve('Hooray!!! She said "Yes"!');
+    }
+
+    if (!isPositiveAnswer) {
+      resolve('Oh no, she said "No".');
+    }
+  });
+  // .then((res) => console.log(res))
+  // .catch((e) => console.log(e.message));
+}
 
 /**
  * Return Promise object that should be resolved with array containing plain values.
@@ -48,8 +60,8 @@ function willYouMarryMe(/* isPositiveAnswer */) {
  *    })
  *
  */
-function processAllPromises(/* array */) {
-  throw new Error('Not implemented');
+function processAllPromises(array) {
+  return Promise.all(array);
 }
 
 /**
@@ -71,8 +83,8 @@ function processAllPromises(/* array */) {
  *    })
  *
  */
-function getFastestPromise(/* array */) {
-  throw new Error('Not implemented');
+function getFastestPromise(array) {
+  return Promise.race(array);
 }
 
 /**
@@ -92,8 +104,22 @@ function getFastestPromise(/* array */) {
  *    });
  *
  */
-function chainPromises(/* array, action */) {
-  throw new Error('Not implemented');
+function chainPromises(arr, action) {
+  return new Promise(((resolve) => {
+    const result = [];
+
+    arr.forEach((promise) => {
+      promise
+        .then((value) => {
+          result.push(value);
+          if (arr.length === result.length) resolve(result);
+        })
+        .catch((err) => {
+          result.push(err);
+          if (arr.length === result.length) resolve(result);
+        });
+    });
+  })).then((r) => r.reduce(action));
 }
 
 module.exports = {

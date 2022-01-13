@@ -1,3 +1,5 @@
+/* eslint-disable max-len */
+/* eslint-disable operator-linebreak */
 /* ************************************************************************************************
  *                                                                                                *
  * Please read the following tutorial before implementing tasks:                                   *
@@ -5,7 +7,6 @@
  * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object        *
  *                                                                                                *
  ************************************************************************************************ */
-
 
 /**
  * Returns the rectangle object with width and height parameters and getArea() method
@@ -20,10 +21,15 @@
  *    console.log(r.height);      // => 20
  *    console.log(r.getArea());   // => 200
  */
-function Rectangle(/* width, height */) {
-  throw new Error('Not implemented');
+function Rectangle(width, height) {
+  return {
+    width,
+    height,
+    getArea() {
+      return this.width * this.height;
+    },
+  };
 }
-
 
 /**
  * Returns the JSON representation of specified object
@@ -35,10 +41,9 @@ function Rectangle(/* width, height */) {
  *    [1,2,3]   =>  '[1,2,3]'
  *    { width: 10, height : 20 } => '{"height":10,"width":20}'
  */
-function getJSON(/* obj */) {
-  throw new Error('Not implemented');
+function getJSON(obj) {
+  return JSON.stringify(obj);
 }
-
 
 /**
  * Returns the object of specified type from JSON representation
@@ -51,10 +56,11 @@ function getJSON(/* obj */) {
  *    const r = fromJSON(Circle.prototype, '{"radius":10}');
  *
  */
-function fromJSON(/* proto, json */) {
-  throw new Error('Not implemented');
+function fromJSON(proto, json) {
+  const obj = JSON.parse(json);
+  Object.setPrototypeOf(obj, proto);
+  return obj;
 }
-
 
 /**
  * Css selectors builder
@@ -111,35 +117,121 @@ function fromJSON(/* proto, json */) {
  */
 
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  count: 0,
+  tmpCounter: 1,
+  isCombined: false,
+  's-1': '',
+  selectorIsExisted: false,
+  restraints: {
+    elemIsExisted: false,
+    idIsExisted: false,
+    pseudoIsExisted: false,
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  checkSelectorExistence(cond) {
+    if (!this.selectorIsExisted || (cond && this.selectorIsExisted)) {
+      this.count += 1;
+      this.selectorIsExisted = true;
+    }
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  checkPossibleMatchesOfSelectors(cond) {
+    if (cond && this[`s-${this.count}`]) {
+      throw Error(
+        // eslint-disable-next-line comma-dangle
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
+    }
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  reducer(sel, value, isElement = false) {
+    if (sel === '') {
+      this.checkSelectorExistence(this.restraints.elemIsExisted);
+      this.checkPossibleMatchesOfSelectors(this.restraints.elemIsExisted);
+      this.restraints.elemIsExisted = true;
+    } else if (sel === '#') {
+      this.checkSelectorExistence(this.restraints.idIsExisted);
+      this.checkPossibleMatchesOfSelectors(this.restraints.idIsExisted);
+      this.restraints.idIsExisted = true;
+    } else if (sel === '::') {
+      this.checkSelectorExistence(this.restraints.pseudoIsExisted);
+      this.checkPossibleMatchesOfSelectors(this.restraints.pseudoIsExisted);
+      this.restraints.pseudoIsExisted = true;
+    } else {
+      this.checkSelectorExistence(null);
+    }
+
+    if (isElement) {
+      this[`s-${this.count}`] = `${value}`;
+    } else if (sel === '[]') {
+      this[`s-${this.count}`] += `[${value}]`;
+    } else {
+      this[`s-${this.count}`] += `${sel}${value}`;
+    }
+    return this;
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  element(value) {
+    return this.reducer('', value, true);
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    return this.reducer('#', value);
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  class(value) {
+    return this.reducer('.', value);
+  },
+
+  attr(value) {
+    return this.reducer('[]', value);
+  },
+
+  pseudoClass(value) {
+    return this.reducer(':', value);
+  },
+
+  pseudoElement(value) {
+    return this.reducer('::', value);
+  },
+
+  combine(selector1, combinator, selector2) {
+    if (!this.isCombined) {
+      this.isCombined = true;
+      this.tmpCounter = this.count;
+    }
+
+    const second = selector2[`s-${selector2.tmpCounter}`];
+
+    this.tmpCounter -= 1;
+    const first = selector1[`s-${selector1.tmpCounter}`];
+
+    this[`s-${this.tmpCounter}`] = `${first} ${combinator} ${second}`;
+
+    return this;
+  },
+
+  reset() {
+    for (; this.count >= 1; this.count -= 1) {
+      delete this[`s-${this.count}`];
+    }
+
+    this.restraints.elemIsExisted = false;
+    this.restraints.idIsExisted = false;
+    this.restraints.pseudoIsExisted = false;
+    this.selectorIsExisted = false;
+    this['s-1'] = '';
+    this.count = 0;
+    this.tmpCounter = 1;
+    this.isCombined = false;
+  },
+
+  stringify() {
+    const fullSelector = this['s-1'];
+    this.reset();
+    return fullSelector;
   },
 };
-
 
 module.exports = {
   Rectangle,
